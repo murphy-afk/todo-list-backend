@@ -1,7 +1,7 @@
 import connection from "../data/db.js";
 
 function index(req, res) {
-  const query = 'SELECT todos.id, todos.title, todos.description, todos.deadline, todos.completed, priorities.name as priority FROM todos INNER JOIN priorities ON todos.priority_id = priorities.id ORDER BY todos.id';
+  const query = 'SELECT todos.id, todos.title, todos.description, todos.deadline, todos.completed, todos.priority_id, priorities.name as priority FROM todos INNER JOIN priorities ON todos.priority_id = priorities.id ORDER BY todos.id';
 
   connection.query(query, (err, results) => {
     if (err) return res.status(500).json({ error: 'database query failed' });
@@ -11,7 +11,7 @@ function index(req, res) {
 
 function show(req, res) {
   const id = req.params.id;
-  const query = 'SELECT todos.id, todos.title, todos.description, todos.deadline, todos.completed, priorities.name as priority FROM todos INNER JOIN priorities ON todos.priority_id = priorities.id WHERE todos.id = ?';
+  const query = 'SELECT todos.id, todos.title, todos.description, todos.deadline, todos.completed, todos.priority_id, priorities.name as priority FROM todos INNER JOIN priorities ON todos.priority_id = priorities.id WHERE todos.id = ?';
   connection.query(query, [id], (err, results) => {
     if (err) return res.status(500).json({ error: 'database query failed' });
     res.json(results[0]);
@@ -29,12 +29,23 @@ function create(req, res) {
 
 function update(req, res) {
   const id = req.params.id;
-  const { title, description, deadline, completed, priority_id } = req.body;
-  const query = 'UPDATE todos SET title = ?, description = ?, deadline = ?, completed = ?, priority_id = ? WHERE id = ?';
-  connection.query(query, [title, description, deadline, completed, priority_id, id], (err, results) => {
-    if (err) return res.status(500).json({ error: 'database query failed' });
-    res.json({ message: 'todo updated successfully' });
-  })
+  const fields = req.body;
+
+  const keys = Object.keys(fields);
+  const values = Object.values(fields);
+
+  if (keys.length === 0) {
+    return res.status(400).json({ error: "No fields to update" });
+  }
+
+  const setClause = keys.map(key => `${key} = ?`).join(", ");
+
+  const query = `UPDATE todos SET ${setClause} WHERE id = ?`;
+
+  connection.query(query, [...values, id], (err, results) => {
+    if (err) return res.status(500).json({ error: "database query failed" });
+    res.json({ message: "todo updated successfully" });
+  });
 }
 
 function destroy(req, res) {
