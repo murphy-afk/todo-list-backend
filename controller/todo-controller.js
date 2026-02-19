@@ -27,10 +27,31 @@ function create(req, res) {
   })
 }
 
+function update(req, res) {
+  const id = req.params.id;
+  const { title, description, deadline, completed, priority_id } = req.body;
+  const query = 'UPDATE todos SET title = ?, description = ?, deadline = ?, completed = ?, priority_id = ? WHERE id = ?';
+  connection.query(query, [title, description, deadline, completed, priority_id, id], (err, results) => {
+    if (err) return res.status(500).json({ error: 'database query failed' });
+    res.json({ message: 'todo updated successfully' });
+  })
+}
+
+function destroy(req, res) {
+  const id = req.params.id;
+  const query = 'DELETE FROM todos WHERE id = ? LIMIT 1';
+  connection.query(query, [id], (err, results) => {
+    if (err) return res.status(500).json({ error: 'database query failed' });
+    res.json({ message: 'todo deleted successfully' });
+  })
+}
+
 
 const controller = {
   index,
   show,
-  create
+  create,
+  update,
+  destroy
 }
 export default controller
