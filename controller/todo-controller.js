@@ -1,8 +1,15 @@
 import connection from "../data/db.js";
 
 function index(req, res) {
-  const query = 'SELECT todos.id, todos.title, todos.description, todos.deadline, todos.completed, todos.priority_id, priorities.name as priority FROM todos INNER JOIN priorities ON todos.priority_id = priorities.id ORDER BY todos.id';
-
+  const completed = req.query.completed;
+  const orders = ['asc', 'desc'];
+  const order = req.query.order ? req.query.order.toLowerCase() : 'asc';
+  let query = 'SELECT todos.id, todos.title, todos.description, todos.deadline, todos.completed, todos.priority_id, priorities.name as priority FROM todos INNER JOIN priorities ON todos.priority_id = priorities.id';
+  if (completed !== undefined) {
+    query += ` WHERE todos.completed = ${completed}`;
+  }
+  query += ` ORDER BY todos.id ${order === 'desc' ? 'DESC' : 'ASC'}`;
+  
   connection.query(query, (err, results) => {
     if (err) return res.status(500).json({ error: 'database query failed' });
     res.json(results);
